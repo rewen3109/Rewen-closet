@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rewen 的衣櫃 - 本地備份版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #F8F7F4; color: #4A4A4A; }
+        .btn-primary { background-color: #A89F91; color: white; }
+        .btn-outline { border: 1px solid #A89F91; color: #A89F91; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .tag { background-color: #F0EEE9; color: #7D7468; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
+        /* 隱藏捲動條 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="pb-24">
+
+    <!-- Header -->
+    <header class="p-6 text-center bg-white border-b border-gray-100 sticky top-0 z-10">
+        <h1 class="text-xl font-medium tracking-widest uppercase text-[#7D7468]">Rewen's Closet</h1>
+        <div class="flex justify-center space-x-4 mt-3">
+            <button onclick="exportBackup()" class="text-[10px] btn-outline px-3 py-1 rounded-full">📤 匯出備份</button>
+            <label class="text-[10px] btn-outline px-3 py-1 rounded-full cursor-pointer">
+                📥 匯入備份 <input type="file" id="importFile" class="hidden" accept=".json" onchange="importBackup(this)">
+            </label>
+        </div>
+    </header>
+
+    <!-- 分類選單 -->
+    <div class="flex overflow-x-auto p-4 space-x-3 no-scrollbar bg-[#F8F7F4]">
+        <button onclick="renderCloset('all')" class="flex-shrink-0 px-5 py-1.5 rounded-full border border-gray-200 text-sm bg-white shadow-sm">全部</button>
+        <button onclick="renderCloset('上衣')" class="flex-shrink-0 px-5 py-1.5 rounded-full border border-gray-200 text-sm bg-white shadow-sm">上衣</button>
+        <button onclick="renderCloset('下衣')" class="flex-shrink-0 px-5 py-1.5 rounded-full border border-gray-200 text-sm bg-white shadow-sm">下衣</button>
+        <button onclick="renderCloset('裙子')" class="flex-shrink-0 px-5 py-1.5 rounded-full border border-gray-200 text-sm bg-white shadow-sm">裙子</button>
+        <button onclick="renderCloset('洋裝')" class="flex-shrink-0 px-5 py-1.5 rounded-full border border-gray-200 text-sm bg-white shadow-sm">洋裝</button>
+        <button onclick="renderCloset('外套')" class="flex-shrink-0 px-5 py-1.5 rounded-full border border-gray-200 text-sm bg-white shadow-sm">外套</button>
+    </div>
+
+    <!-- 衣櫃網格 -->
+    <main class="px-4 grid grid-cols-2 gap-4" id="closetGrid">
+        <!-- JS 動態生成 -->
+    </main>
+
+    <!-- 新增按鈕 -->
+    <button onclick="toggleModal(true)" class="fixed bottom-8 right-6 w-14 h-14 btn-primary rounded-full shadow-lg flex items-center justify-center text-3xl font-light">+</button>
+
+    <!-- 上傳彈窗 -->
+    <div id="uploadModal" class="fixed inset-0 bg-black/40 hidden z-50 flex items-end">
+        <div class="bg-white w-full rounded-t-3xl p-6 max-h-[92vh] overflow-y-auto shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-medium">新增衣物單品</h2>
+                <button onclick="toggleModal(false)" class="text-gray-400 text-2xl">&times;</button>
+            </div>
+
+            <div class="space-y-5">
+                <!-- 照片上傳與壓縮預覽 -->
+                <div class="border-2 border-dashed border-gray-200 rounded-xl h-48 flex flex-col items-center justify-center relative overflow-hidden bg-gray-50">
+                    <input type="file" id="itemImage" accept="image/*" class="absolute inset-0 opacity-0 z-10" onchange="handleImage(this)">
+                    <img id="imagePreview" class="hidden absolute inset-0 w-full h-full object-cover">
+                    <div id="uploadPlaceholder" class="text-center">
+                        <span class="text-gray-400 text-sm block">點擊開啟相機拍照</span>
+                        <span class="text-[10px] text-gray-300 mt-1">照片將自動優化大小</span>
+                    </div>
+                </div>
+
+                <!-- 分類與細分 -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] text-gray-400 mb-1 ml-1">類別</label>
+                        <select id="mainCat" onchange="updateSubCat()" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-1 focus:ring-[#A89F91]">
+                            <option value="上衣">上衣</option>
+                            <option value="下衣">下衣</option>
+                            <option value="裙子">裙子</option>
+                            <option value="洋裝">洋裝</option>
+                            <option value="外套">外套</option>
+                            <option value="內著">內著</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-400 mb-1 ml-1">細分</label>
+                        <select id="subCat" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-1 focus:ring-[#A89F91]">
+                            <!-- 動態更新 -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 季節複選 -->
+                <div>
+                    <label class="block text-[10px] text-gray-400 mb-2 ml-1">適合季節</label>
+                    <div class="flex justify-between px-2">
+                        <label class="text-sm"><input type="checkbox" name="season" value="春"> 春</label>
+                        <label class="text-sm"><input type="checkbox" name="season" value="夏"> 夏</label>
+                        <label class="text-sm"><input type="checkbox" name="season" value="秋"> 秋</label>
+                        <label class="text-sm"><input type="checkbox" name="season" value="冬"> 冬</label>
+                    </div>
+                </div>
+
+                <!-- 資訊 -->
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="itemSize" placeholder="尺寸 (如: S, M)" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm">
+                    <input type="text" id="itemSource" placeholder="購買來源" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm">
+                    <input type="number" id="itemPrice" placeholder="價格" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm col-span-2">
+                </div>
+
+                <button onclick="saveToCloset()" class="w-full btn-primary py-4 rounded-xl font-medium mt-4 shadow-md active:scale-95 transition-transform">加入衣櫃</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let clothes = JSON.parse(localStorage.getItem('rewenCloset')) || [];
+        let currentResizedBase64 = "";
+
+        function toggleModal(show) {
+            document.getElementById('uploadModal').classList.toggle('hidden', !show);
+            if(show) updateSubCat();
+        }
+
+        // 圖片處理：壓縮以節省 localStorage 空間
+        function handleImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function () {
+                        // 使用 Canvas 壓縮圖片
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600; // 限制最大寬度
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        // 轉換成較小的 JPEG 基底字串
+                        currentResizedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('imagePreview').src = currentResizedBase64;
+                        document.getElementById('imagePreview').classList.remove('hidden');
+                        document.getElementById('uploadPlaceholder').classList.add('hidden');
+                    }
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function updateSubCat() {
+            const main = document.getElementById('mainCat').value;
+            const sub = document.getElementById('subCat');
+            let options = [];
+            if (main === '上衣') options = ['短袖', '長袖', '無袖', '針織'];
+            else if (main === '下衣') options = ['短褲', '長褲', '牛仔褲'];
+            else options = ['一般'];
+            
+            sub.innerHTML = options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+        }
+
+        function saveToCloset() {
+            if (!currentResizedBase64) return alert('請先拍照或上傳圖片');
+
+            const seasons = Array.from(document.querySelectorAll('input[name="season"]:checked')).map(el => el.value);
+            const newItem = {
+                id: Date.now(),
+                img: currentResizedBase64,
+                mainCat: document.getElementById('mainCat').value,
+                subCat: document.getElementById('subCat').value,
+                seasons: seasons,
+                size: document.getElementById('itemSize').value || '-',
+                source: document.getElementById('itemSource').value || '-',
+                price: document.getElementById('itemPrice').value || '-',
+                date: new Date().toLocaleDateString()
+            };
+
+            clothes.push(newItem);
+            try {
+                localStorage.setItem('rewenCloset', JSON.stringify(clothes));
+                renderCloset();
+                toggleModal(false);
+                resetForm();
+            } catch (e) {
+                alert('記憶體空間不足，請刪除部分舊照片或匯出備份後清理空間。');
+            }
+        }
+
+        function renderCloset(filter = 'all') {
+            const grid = document.getElementById('closetGrid');
+            grid.innerHTML = '';
+            const items = filter === 'all' ? clothes : clothes.filter(i => i.mainCat === filter);
+
+            items.forEach(item => {
+                grid.innerHTML += `
+                    <div class="card overflow-hidden relative">
+                        <button onclick="deleteItem(${item.id})" class="absolute top-2 right-2 bg-white/70 w-6 h-6 rounded-full text-[10px]">✕</button>
+                        <img src="${item.img}" class="w-full h-44 object-cover">
+                        <div class="p-3">
+                            <p class="text-[10px] text-gray-400 mb-1">${item.mainCat} · ${item.subCat}</p>
+                            <div class="flex flex-wrap gap-1 mb-2">
+                                ${item.seasons.map(s => `<span class="tag">${s}</span>`).join('')}
+                            </div>
+                            <div class="text-[9px] text-gray-400 space-y-0.5 border-t pt-2">
+                                <p>尺寸：${item.size} / 來源：${item.source}</p>
+                                <p>價格：NT$ ${item.price}</p>
+                                <p class="text-gray-300">📅 ${item.date}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function deleteItem(id) {
+            if (confirm('確定要刪除嗎？')) {
+                clothes = clothes.filter(i => i.id !== id);
+                localStorage.setItem('rewenCloset', JSON.stringify(clothes));
+                renderCloset();
+            }
+        }
+
+        function resetForm() {
+            currentResizedBase64 = "";
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('uploadPlaceholder').classList.remove('hidden');
+            document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+            document.getElementById('itemSize').value = "";
+            document.getElementById('itemSource').value = "";
+            document.getElementById('itemPrice').value = "";
+        }
+
+        // --- 備份與還原功能 ---
+
+        // 匯出 JSON 檔案
+        function exportBackup() {
+            if (clothes.length === 0) return alert('衣櫃是空的，沒有資料可以備份喔！');
+            const dataStr = JSON.stringify(clothes);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportName = `RewenCloset_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportName);
+            linkElement.click();
+        }
+
+        // 匯入 JSON 檔案
+        function importBackup(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (confirm(`即將匯入 ${importedData.length} 件衣物，這會覆蓋目前手機上的資料，確定嗎？`)) {
+                        clothes = importedData;
+                        localStorage.setItem('rewenCloset', JSON.stringify(clothes));
+                        renderCloset();
+                        alert('匯入成功！');
+                    }
+                } catch (err) {
+                    alert('檔案格式錯誤，請確保上傳的是正確的備份檔。');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 初始化
+        renderCloset();
+    </script>
+</body>
+</html>
