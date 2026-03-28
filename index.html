@@ -2,31 +2,38 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rewen 的衣櫃 - 編輯功能版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Rewen 的大容量衣櫃</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #F8F7F4; color: #4A4A4A; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #F8F7F4; color: #4A4A4A; -webkit-text-size-adjust: 100%; }
+        
+        /* 防止手機點擊輸入框自動放大：字體必須至少 16px */
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+
         .btn-primary { background-color: #A89F91; color: white; }
         .btn-outline { border: 1px solid #E5E7EB; color: #9CA3AF; background-color: white; }
         .btn-active { border-color: #A89F91; color: #A89F91; background-color: #FAF9F6; font-weight: 500; }
         
-        .image-container {
-            width: 100%;
-            aspect-ratio: 3 / 4;
-            overflow: hidden;
-            position: relative;
-        }
-        .image-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
+        .image-container { width: 100%; aspect-ratio: 3 / 4; overflow: hidden; position: relative; }
+        .image-container img { width: 100%; height: 100%; object-fit: cover; }
+        
         .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); overflow: hidden; }
         .tag { background-color: #F0EEE9; color: #7D7468; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .modern-input {
+            padding: 10px 12px;
+            background-color: #F9F9F9;
+            border: 1px solid #F0F0F0;
+            border-radius: 8px;
+            appearance: none;
+            outline: none;
+            width: 100%;
+        }
     </style>
 </head>
 <body class="pb-24">
@@ -48,12 +55,11 @@
             <button onclick="setMainFilter('all')" data-cat="all" class="filter-main flex-shrink-0 px-4 py-1.5 rounded-full text-sm btn-active">全部</button>
             <button onclick="setMainFilter('上衣')" data-cat="上衣" class="filter-main flex-shrink-0 px-4 py-1.5 rounded-full text-sm btn-outline">上衣</button>
             <button onclick="setMainFilter('下衣')" data-cat="下衣" class="filter-main flex-shrink-0 px-4 py-1.5 rounded-full text-sm btn-outline">下衣</button>
-            <button onclick="setMainFilter('裙子')" data-cat="裙子" class="filter-main flex-shrink-0 px-4 py-1.5 rounded-full text-sm btn-outline">裙子</button>
             <button onclick="setMainFilter('洋裝')" data-cat="洋裝" class="filter-main flex-shrink-0 px-4 py-1.5 rounded-full text-sm btn-outline">洋裝</button>
             <button onclick="setMainFilter('外套')" data-cat="外套" class="filter-main flex-shrink-0 px-4 py-1.5 rounded-full text-sm btn-outline">外套</button>
             <button onclick="setMainFilter('運動')" data-cat="運動" class="filter-main flex-shrink-0 px-4 py-1.5 rounded-full text-sm btn-outline">運動</button>
+            <button onclick="setMainFilter('內著')" data-cat="內著" class="filter-main flex-shrink-0 px-4 py-1.5 rounded-full text-sm btn-outline">內著</button>
         </div>
-
         <div class="flex overflow-x-auto space-x-2 no-scrollbar border-t border-gray-100 pt-3">
             <span class="text-[10px] text-gray-400 flex items-center pr-1">季節:</span>
             <button onclick="setSeasonFilter('all')" data-season="all" class="filter-season flex-shrink-0 text-[11px] px-3 py-1 rounded-md border border-gray-200 bg-white text-gray-500">全部</button>
@@ -77,116 +83,98 @@
                 <h2 id="modalTitle" class="text-lg font-medium">新增衣物單品</h2>
                 <button onclick="toggleModal(false)" class="text-gray-400 text-2xl">&times;</button>
             </div>
-
-            <div class="space-y-5">
+            <div class="space-y-4">
                 <div class="border-2 border-dashed border-gray-200 rounded-xl image-container flex flex-col items-center justify-center relative overflow-hidden bg-gray-50">
                     <input type="file" id="itemImage" accept="image/*" class="absolute inset-0 opacity-0 z-10" onchange="handleImage(this)">
                     <img id="imagePreview" class="hidden absolute inset-0 w-full h-full object-cover">
                     <div id="uploadPlaceholder" class="text-center">
                         <span class="text-gray-400 text-sm block">點擊拍攝/選擇照片</span>
-                        <span class="text-[10px] text-gray-300">3:4 比例效果最佳</span>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] text-gray-400 mb-1 ml-1">主類別</label>
-                        <select id="mainCat" onchange="updateSubCat()" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm">
-                            <option value="上衣">上衣</option>
-                            <option value="下衣">下衣</option>
-                            <option value="裙子">裙子</option>
-                            <option value="洋裝">洋裝</option>
-                            <option value="外套">外套</option>
-                            <option value="運動">運動</option>
-                            <option value="內著">內著</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] text-gray-400 mb-1 ml-1">細分</label>
-                        <select id="subCat" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm"></select>
-                    </div>
+                    <select id="mainCat" onchange="updateSubCat()" class="modern-input">
+                        <option value="上衣">上衣</option>
+                        <option value="下衣">下衣</option>
+                        <option value="洋裝">洋裝</option>
+                        <option value="外套">外套</option>
+                        <option value="運動">運動</option>
+                        <option value="內著">內著</option>
+                    </select>
+                    <select id="subCat" class="modern-input"></select>
                 </div>
-
+                <div class="flex justify-between px-2">
+                    <label class="text-sm"><input type="checkbox" name="season" value="春"> 春</label>
+                    <label class="text-sm"><input type="checkbox" name="season" value="夏"> 夏</label>
+                    <label class="text-sm"><input type="checkbox" name="season" value="秋"> 秋</label>
+                    <label class="text-sm"><input type="checkbox" name="season" value="冬"> 冬</label>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="itemSize" placeholder="尺寸" class="modern-input">
+                    <input type="text" id="itemSource" placeholder="來源" class="modern-input">
+                    <input type="number" id="itemPrice" placeholder="價格" class="modern-input col-span-2">
+                </div>
+                <!-- 備註欄位 -->
                 <div>
-                    <label class="block text-[10px] text-gray-400 mb-2 ml-1">適合季節 (複選)</label>
-                    <div class="flex justify-between px-2">
-                        <label class="text-sm"><input type="checkbox" name="season" value="春"> 春</label>
-                        <label class="text-sm"><input type="checkbox" name="season" value="夏"> 夏</label>
-                        <label class="text-sm"><input type="checkbox" name="season" value="秋"> 秋</label>
-                        <label class="text-sm"><input type="checkbox" name="season" value="冬"> 冬</label>
-                    </div>
+                    <textarea id="itemNotes" placeholder="備註 (例如：洗滌方式、穿搭心得...)" class="modern-input h-20 resize-none"></textarea>
                 </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="itemSize" placeholder="尺寸" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm">
-                    <input type="text" id="itemSource" placeholder="購買來源" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm">
-                    <input type="number" id="itemPrice" placeholder="價格" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm col-span-2">
-                </div>
-
-                <button id="saveBtn" onclick="saveToCloset()" class="w-full btn-primary py-4 rounded-xl font-medium mt-4 shadow-md">加入衣櫃</button>
+                <button id="saveBtn" onclick="saveToCloset()" class="w-full btn-primary py-4 rounded-xl font-medium shadow-md">儲存到衣櫃</button>
             </div>
         </div>
     </div>
 
     <script>
-        let clothes = JSON.parse(localStorage.getItem('rewenCloset')) || [];
-        let currentResizedBase64 = "";
-        let editingId = null; // 紀錄正在編輯的衣服 ID
-        
-        let activeMainFilter = 'all';
-        let activeSeasonFilter = 'all';
+        let db;
+        const request = indexedDB.open("RewenClosetDB", 1);
+        request.onupgradeneeded = e => {
+            db = e.target.result;
+            db.createObjectStore("clothes", { keyPath: "id" });
+        };
+        request.onsuccess = e => {
+            db = e.target.result;
+            renderCloset();
+        };
 
-        function toggleModal(show) {
-            document.getElementById('uploadModal').classList.toggle('hidden', !show);
-        }
+        let currentResizedBase64 = "";
+        let editingId = null;
+        let activeMainFilter = 'all', activeSeasonFilter = 'all';
+
+        function toggleModal(show) { document.getElementById('uploadModal').classList.toggle('hidden', !show); }
 
         function openAddModal() {
-            editingId = null;
-            resetForm();
+            editingId = null; resetForm();
             document.getElementById('modalTitle').innerText = "新增衣物單品";
-            document.getElementById('saveBtn').innerText = "加入衣櫃";
-            updateSubCat();
-            toggleModal(true);
+            updateSubCat(); toggleModal(true);
         }
 
-        function openEditModal(id) {
-            const item = clothes.find(i => i.id === id);
+        async function openEditModal(id) {
+            const tx = db.transaction("clothes", "readonly");
+            const store = tx.objectStore("clothes");
+            const item = await new Promise(res => {
+                const req = store.get(id);
+                req.onsuccess = () => res(req.result);
+            });
             if (!item) return;
-
             editingId = id;
             document.getElementById('modalTitle').innerText = "編輯衣物資訊";
-            document.getElementById('saveBtn').innerText = "儲存修改";
-            
-            // 填入資料
             currentResizedBase64 = item.img;
             document.getElementById('imagePreview').src = item.img;
             document.getElementById('imagePreview').classList.remove('hidden');
             document.getElementById('uploadPlaceholder').classList.add('hidden');
-            
             document.getElementById('mainCat').value = item.mainCat;
             updateSubCat();
             document.getElementById('subCat').value = item.subCat;
-            
-            // 勾選季節
-            document.querySelectorAll('input[name="season"]').forEach(cb => {
-                cb.checked = item.seasons.includes(cb.value);
-            });
-            
+            document.querySelectorAll('input[name="season"]').forEach(cb => cb.checked = item.seasons.includes(cb.value));
             document.getElementById('itemSize').value = item.size === '-' ? "" : item.size;
             document.getElementById('itemSource').value = item.source === '-' ? "" : item.source;
             document.getElementById('itemPrice').value = item.price === '-' ? "" : item.price;
-            
+            document.getElementById('itemNotes').value = item.notes || ""; // 帶入備註
             toggleModal(true);
         }
 
-        // 過濾器邏輯
         function setMainFilter(cat) {
             activeMainFilter = cat;
-            document.querySelectorAll('.filter-main').forEach(btn => {
-                btn.classList.replace('btn-active', 'btn-outline');
-            });
-            const activeBtn = document.querySelector(`.filter-main[data-cat="${cat}"]`);
-            activeBtn.classList.replace('btn-outline', 'btn-active');
+            document.querySelectorAll('.filter-main').forEach(btn => btn.classList.replace('btn-active', 'btn-outline'));
+            document.querySelector(`.filter-main[data-cat="${cat}"]`).classList.replace('btn-outline', 'btn-active');
             renderCloset();
         }
 
@@ -201,38 +189,48 @@
             renderCloset();
         }
 
-        function renderCloset() {
+        async function renderCloset() {
+            if (!db) return;
             const grid = document.getElementById('closetGrid');
-            grid.innerHTML = '';
+            grid.innerHTML = '<p class="col-span-2 text-center text-gray-300 py-10">讀取中...</p>';
+            
+            const tx = db.transaction("clothes", "readonly");
+            const store = tx.objectStore("clothes");
+            const allItems = await new Promise(res => {
+                const req = store.getAll();
+                req.onsuccess = () => res(req.result);
+            });
 
-            const filteredItems = clothes.filter(item => {
+            const filteredItems = allItems.filter(item => {
                 const mainMatch = (activeMainFilter === 'all' || item.mainCat === activeMainFilter);
                 const seasonMatch = (activeSeasonFilter === 'all' || item.seasons.includes(activeSeasonFilter));
                 return mainMatch && seasonMatch;
-            });
+            }).sort((a, b) => b.id - a.id);
 
+            grid.innerHTML = '';
             if (filteredItems.length === 0) {
-                grid.innerHTML = `<p class="col-span-2 text-center text-gray-300 py-10 text-sm">尚無相符衣物</p>`;
+                grid.innerHTML = `<p class="col-span-2 text-center text-gray-300 py-10 text-sm">尚無衣物</p>`;
                 return;
             }
 
             filteredItems.forEach(item => {
+                // 處理備註顯示
+                const notesHtml = item.notes ? `<p class="text-[9px] text-gray-300 italic mt-1 line-clamp-2">Note: ${item.notes}</p>` : '';
+                
                 grid.innerHTML += `
-                    <div class="card relative">
-                        <!-- 操作按鈕區 -->
+                    <div class="card relative animate-fade-in">
                         <div class="absolute top-2 right-2 z-10 flex space-x-1">
-                            <button onclick="openEditModal(${item.id})" class="bg-white/70 w-7 h-7 rounded-full text-[10px] backdrop-blur-sm flex items-center justify-center shadow-sm">✎</button>
-                            <button onclick="deleteItem(${item.id})" class="bg-white/70 w-7 h-7 rounded-full text-[10px] backdrop-blur-sm flex items-center justify-center shadow-sm">✕</button>
+                            <button onclick="openEditModal(${item.id})" class="bg-white/80 w-7 h-7 rounded-full text-[10px] shadow-sm flex items-center justify-center">✎</button>
+                            <button onclick="deleteItem(${item.id})" class="bg-white/80 w-7 h-7 rounded-full text-[10px] shadow-sm flex items-center justify-center">✕</button>
                         </div>
-                        <div class="image-container">
-                            <img src="${item.img}" loading="lazy">
-                        </div>
+                        <div class="image-container"><img src="${item.img}" loading="lazy"></div>
                         <div class="p-3">
                             <p class="text-[10px] text-gray-400 mb-1">${item.mainCat} · ${item.subCat}</p>
                             <div class="flex flex-wrap gap-1 mb-2">${item.seasons.map(s => `<span class="tag">${s}</span>`).join('')}</div>
                             <div class="text-[9px] text-gray-400 border-t pt-2 mt-1">
-                                <p>來源：${item.source} / 尺寸：${item.size}</p>
-                                <p>加入日期：${item.date}</p>
+                                <p>來源：${item.source}</p>
+                                ${notesHtml}
+                                <p class="text-[8px] text-gray-200 mt-1">${item.date}</p>
                             </div>
                         </div>
                     </div>`;
@@ -242,28 +240,24 @@
         function handleImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function (e) {
+                reader.onload = e => {
                     const img = new Image();
                     img.src = e.target.result;
-                    img.onload = function () {
+                    img.onload = () => {
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-                        const targetWidth = 600, targetHeight = 800;
-                        canvas.width = targetWidth; canvas.height = targetHeight;
+                        canvas.width = 500; canvas.height = 667; 
                         let srcX = 0, srcY = 0, srcW = img.width, srcH = img.height;
-                        const aspectRatio = targetWidth / targetHeight;
-                        if (img.width / img.height > aspectRatio) {
-                            srcW = img.height * aspectRatio; srcX = (img.width - srcW) / 2;
-                        } else {
-                            srcH = img.width / aspectRatio; srcY = (img.height - srcH) / 2;
-                        }
-                        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, targetWidth, targetHeight);
-                        currentResizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                        const ratio = 500/667;
+                        if (img.width/img.height > ratio) { srcW = img.height*ratio; srcX = (img.width-srcW)/2; }
+                        else { srcH = img.width/ratio; srcY = (img.height-srcH)/2; }
+                        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, 500, 667);
+                        currentResizedBase64 = canvas.toDataURL('image/jpeg', 0.7);
                         document.getElementById('imagePreview').src = currentResizedBase64;
                         document.getElementById('imagePreview').classList.remove('hidden');
                         document.getElementById('uploadPlaceholder').classList.add('hidden');
                     }
-                }
+                };
                 reader.readAsDataURL(input.files[0]);
             }
         }
@@ -272,18 +266,17 @@
             const main = document.getElementById('mainCat').value;
             const sub = document.getElementById('subCat');
             let opts = [];
-            if (main === '上衣') opts = ['短袖', '長袖', '無袖'];
-            else if (main === '下衣') opts = ['短褲', '長褲'];
-            else if (main === '運動') opts = ['運動上衣', '運動下衣', '運動內衣', '運動外套'];
-            else if (main === '內著') opts = ['內衣', '內褲', '睡衣'];
+            if (main === '上衣') opts = ['短袖','長袖','無袖'];
+            else if (main === '下衣') opts = ['短褲', '長褲', '裙子'];
+            else if (main === '運動') opts = ['運動上衣','運動下衣','運動內衣','運動外套'];
+            else if (main === '內著') opts = ['內衣','內褲','睡衣'];
             else opts = ['一般'];
             sub.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
         }
 
-        function saveToCloset() {
-            if (!currentResizedBase64) return alert('請先拍照或上傳照片');
+        async function saveToCloset() {
+            if (!currentResizedBase64) return alert('請先拍照');
             const seasons = Array.from(document.querySelectorAll('input[name="season"]:checked')).map(el => el.value);
-            
             const itemData = {
                 id: editingId || Date.now(),
                 img: currentResizedBase64,
@@ -293,66 +286,57 @@
                 size: document.getElementById('itemSize').value || '-',
                 source: document.getElementById('itemSource').value || '-',
                 price: document.getElementById('itemPrice').value || '-',
-                date: editingId ? (clothes.find(i => i.id === editingId).date) : new Date().toLocaleDateString()
+                notes: document.getElementById('itemNotes').value || '', // 儲存備註
+                date: editingId ? (await getSingleItem(editingId)).date : new Date().toLocaleDateString()
             };
+            const tx = db.transaction("clothes", "readwrite");
+            tx.objectStore("clothes").put(itemData);
+            tx.oncomplete = () => { renderCloset(); toggleModal(false); resetForm(); };
+        }
 
-            if (editingId) {
-                // 更新模式
-                const index = clothes.findIndex(i => i.id === editingId);
-                clothes[index] = itemData;
-            } else {
-                // 新增模式
-                clothes.push(itemData);
-            }
-
-            localStorage.setItem('rewenCloset', JSON.stringify(clothes));
-            renderCloset();
-            toggleModal(false);
-            resetForm();
+        async function getSingleItem(id) {
+            return new Promise(res => {
+                db.transaction("clothes").objectStore("clothes").get(id).onsuccess = e => res(e.target.result);
+            });
         }
 
         function deleteItem(id) {
-            if (confirm('確定要刪除這件衣物嗎？')) {
-                clothes = clothes.filter(i => i.id !== id);
-                localStorage.setItem('rewenCloset', JSON.stringify(clothes));
-                renderCloset();
-            }
+            if (!confirm('確定刪除？')) return;
+            const tx = db.transaction("clothes", "readwrite");
+            tx.objectStore("clothes").delete(id);
+            tx.oncomplete = () => renderCloset();
         }
 
         function resetForm() {
-            currentResizedBase64 = "";
-            document.getElementById('imagePreview').classList.add('hidden');
+            currentResizedBase64 = ""; document.getElementById('imagePreview').classList.add('hidden');
             document.getElementById('uploadPlaceholder').classList.remove('hidden');
             document.querySelectorAll('input[name="season"]').forEach(c => c.checked = false);
-            document.getElementById('itemSize').value = ""; 
-            document.getElementById('itemSource').value = ""; 
-            document.getElementById('itemPrice').value = "";
+            document.getElementById('itemSize').value = ""; document.getElementById('itemSource').value = ""; 
+            document.getElementById('itemPrice').value = ""; document.getElementById('itemNotes').value = "";
         }
 
-        function exportBackup() {
-            const blob = new Blob([JSON.stringify(clothes)], {type: "application/json"});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = `Rewen_Closet_Backup_${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
+        async function exportBackup() {
+            const tx = db.transaction("clothes", "readonly");
+            tx.objectStore("clothes").getAll().onsuccess = e => {
+                const blob = new Blob([JSON.stringify(e.target.result)], {type: "application/json"});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `Rewen_Closet_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+            };
         }
 
         function importBackup(input) {
             const reader = new FileReader();
-            reader.onload = e => {
-                try {
-                    clothes = JSON.parse(e.target.result);
-                    localStorage.setItem('rewenCloset', JSON.stringify(clothes));
-                    renderCloset();
-                    alert('匯入成功！');
-                } catch(err) { alert('匯入失敗'); }
+            reader.onload = async e => {
+                const items = JSON.parse(e.target.result);
+                const tx = db.transaction("clothes", "readwrite");
+                const store = tx.objectStore("clothes");
+                items.forEach(item => store.put(item));
+                tx.oncomplete = () => { alert('匯入成功'); renderCloset(); };
             };
             reader.readAsText(input.files[0]);
         }
-
-        // 初始化
-        renderCloset();
-        setSeasonFilter('all');
     </script>
 </body>
 </html>
