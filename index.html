@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Rewen 的大容量衣櫃</title>
+    <title>Rewen 的百件衣櫃精簡統計版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
@@ -12,25 +12,23 @@
         .btn-primary { background-color: #A89F91; color: white; }
         .btn-outline { border: 1px solid #E5E7EB; color: #9CA3AF; background-color: white; }
         .btn-active { border-color: #A89F91; color: #A89F91; background-color: #FAF9F6; font-weight: 500; }
-        .image-container { width: 100%; aspect-ratio: 3 / 4; overflow: hidden; position: relative; }
+        .image-container { width: 100%; aspect-ratio: 3 / 4; overflow: hidden; position: relative; border-bottom: 1px solid #F9F9F9; }
         .image-container img { width: 100%; height: 100%; object-fit: cover; }
         .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); overflow: hidden; }
         .tag { background-color: #F0EEE9; color: #7D7468; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .modern-input { padding: 10px 12px; background-color: #F9F9F9; border: 1px solid #F0F0F0; border-radius: 8px; appearance: none; outline: none; width: 100%; }
-        /* 統計表格樣式 */
         .stats-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .stats-table th, .stats-table td { padding: 12px 8px; border-bottom: 1px solid #F3F3F3; text-align: left; }
-        .stats-table th { color: #A89F91; font-weight: 500; }
+        .stats-table td { padding: 12px 8px; border-bottom: 1px solid #F3F3F3; }
     </style>
 </head>
 <body class="pb-24">
 
     <!-- Header -->
-    <header class="p-6 text-center bg-white border-b border-gray-100 sticky top-0 z-20">
+    <header class="p-6 text-center bg-white border-b border-gray-100 sticky top-0 z-30">
         <h1 class="text-xl font-medium tracking-widest uppercase text-[#7D7468]">Rewen's Closet</h1>
         <div class="flex justify-center space-x-2 mt-3">
-            <button onclick="openStatsModal()" class="text-[9px] border border-[#A89F91] text-[#A89F91] px-3 py-1 rounded-full bg-white shadow-sm font-medium">📊 統計報告</button>
+            <button onclick="openStatsModal()" class="text-[9px] border border-[#A89F91] text-[#A89F91] px-3 py-1 rounded-full bg-white shadow-sm font-medium">📊 數量統計</button>
             <button onclick="exportBackup()" class="text-[9px] border border-gray-200 text-gray-400 px-3 py-1 rounded-full bg-white shadow-sm">📤 備份</button>
             <label class="text-[9px] border border-gray-200 text-gray-400 px-3 py-1 rounded-full cursor-pointer bg-white shadow-sm">
                 📥 匯入 <input type="file" id="importFile" class="hidden" accept=".json" onchange="importBackup(this)">
@@ -38,8 +36,13 @@
         </div>
     </header>
 
-    <!-- 過濾區域 -->
-    <div class="sticky top-[115px] z-10 bg-[#F8F7F4] pt-2 pb-3 shadow-sm px-4 space-y-3">
+    <!-- 過濾與搜尋區 -->
+    <div class="sticky top-[115px] z-20 bg-[#F8F7F4] pt-2 pb-3 shadow-sm px-4 space-y-3">
+        <div class="relative">
+            <input type="text" id="searchInput" oninput="renderCloset()" placeholder="搜尋品牌、備註、尺寸..." class="modern-input pl-10 text-sm">
+            <span class="absolute left-3 top-2.5 text-gray-300">🔍</span>
+        </div>
+
         <div class="flex overflow-x-auto space-x-2 no-scrollbar" id="mainFilterContainer">
             <button onclick="setMainFilter('all')" data-cat="all" class="filter-main flex-shrink-0 px-4 py-1.5 rounded-full text-sm btn-active">全部</button>
             <button onclick="setMainFilter('上衣')" data-cat="上衣" class="filter-main flex-shrink-0 px-4 py-1.5 rounded-full text-sm btn-outline">上衣</button>
@@ -65,17 +68,13 @@
     <!-- 新增按鈕 -->
     <button onclick="openAddModal()" class="fixed bottom-8 right-6 w-14 h-14 btn-primary rounded-full shadow-lg flex items-center justify-center text-3xl font-light">+</button>
 
-    <!-- 統計報告彈窗 -->
-    <div id="statsModal" class="fixed inset-0 bg-black/40 hidden z-50 flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl relative">
+    <!-- 統計報告彈窗 (已移除金額相關內容) -->
+    <div id="statsModal" class="fixed inset-0 bg-black/40 hidden z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 max-h-[85vh] overflow-y-auto shadow-2xl relative">
             <button onclick="closeStatsModal()" class="absolute top-5 right-5 text-gray-400 text-2xl">&times;</button>
-            <h2 class="text-lg font-medium mb-6 text-center text-[#7D7468]">衣櫃數據統計</h2>
-            
-            <div id="statsContent" class="space-y-8">
-                <!-- 由 JS 動態生成內容 -->
-            </div>
-            
-            <button onclick="closeStatsModal()" class="w-full mt-8 py-3 bg-gray-100 text-gray-500 rounded-xl text-sm font-medium">關閉報告</button>
+            <h2 class="text-lg font-medium mb-6 text-center text-[#7D7468]">衣櫃數量統計</h2>
+            <div id="statsContent" class="space-y-6"></div>
+            <button onclick="closeStatsModal()" class="w-full mt-6 py-3 bg-[#F8F7F4] text-gray-500 rounded-xl text-sm font-medium">關閉</button>
         </div>
     </div>
 
@@ -96,12 +95,9 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <select id="mainCat" onchange="updateSubCat()" class="modern-input">
-                        <option value="上衣">上衣</option>
-                        <option value="下衣">下衣</option>
-                        <option value="洋裝">洋裝</option>
-                        <option value="外套">外套</option>
-                        <option value="運動">運動</option>
-                        <option value="內著">內著</option>
+                        <option value="上衣">上衣</option><option value="下衣">下衣</option>
+                        <option value="洋裝">洋裝</option><option value="外套">外套</option>
+                        <option value="運動">運動</option><option value="內著">內著</option>
                     </select>
                     <select id="subCat" class="modern-input"></select>
                 </div>
@@ -113,7 +109,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <input type="text" id="itemSize" placeholder="尺寸" class="modern-input">
-                    <input type="text" id="itemSource" placeholder="來源" class="modern-input">
+                    <input type="text" id="itemSource" placeholder="來源 (品牌)" class="modern-input">
                     <input type="number" id="itemPrice" placeholder="價格" class="modern-input col-span-2">
                 </div>
                 <textarea id="itemNotes" placeholder="備註..." class="modern-input h-20 resize-none"></textarea>
@@ -129,153 +125,104 @@
             db = e.target.result;
             db.createObjectStore("clothes", { keyPath: "id" });
         };
-        request.onsuccess = e => {
-            db = e.target.result;
-            renderCloset();
-        };
+        request.onsuccess = e => { db = e.target.result; renderCloset(); };
 
-        let currentResizedBase64 = "";
-        let editingId = null;
+        let currentResizedBase64 = "", editingId = null;
         let activeMainFilter = 'all', activeSeasonFilter = 'all';
 
         function toggleModal(show) { document.getElementById('uploadModal').classList.toggle('hidden', !show); }
         function openAddModal() { editingId = null; resetForm(); document.getElementById('modalTitle').innerText = "新增衣物單品"; updateSubCat(); toggleModal(true); }
 
-        // --- 統計功能邏輯 ---
+        // --- 修正後的統計功能 (純數量) ---
         function openStatsModal() {
             const tx = db.transaction("clothes", "readonly");
-            const store = tx.objectStore("clothes");
-            const req = store.getAll();
-
-            req.onsuccess = () => {
-                const clothes = req.result;
+            tx.objectStore("clothes").getAll().onsuccess = e => {
+                const clothes = e.target.result;
                 const stats = {
                     total: clothes.length,
                     categories: { "上衣": 0, "下衣": 0, "洋裝": 0, "外套": 0, "運動": 0, "內著": 0 },
-                    seasons: { "春": 0, "夏": 0, "秋": 0, "冬": 0 }
+                    seasons: { "春": 0, "夏": 0, "秋": 0, "冬": 0 },
+                    sources: {}
                 };
 
                 clothes.forEach(item => {
                     if (stats.categories[item.mainCat] !== undefined) stats.categories[item.mainCat]++;
                     item.seasons.forEach(s => { if (stats.seasons[s] !== undefined) stats.seasons[s]++; });
+                    if (item.source && item.source !== '-') {
+                        stats.sources[item.source] = (stats.sources[item.source] || 0) + 1;
+                    }
                 });
 
-                renderStatsUI(stats);
+                const topSource = Object.entries(stats.sources).sort((a,b) => b[1] - a[1])[0] || ["無", 0];
+
+                const container = document.getElementById('statsContent');
+                container.innerHTML = `
+                    <div class="bg-[#FAF9F6] p-6 rounded-2xl text-center">
+                        <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">衣櫃總件數</p>
+                        <p class="text-4xl font-light text-[#A89F91]">${stats.total}</p>
+                    </div>
+                    
+                    <div class="space-y-4 pt-2">
+                        <h3 class="text-xs font-medium text-gray-400 border-l-2 border-[#A89F91] pl-2">各類別佔比</h3>
+                        <table class="stats-table">${Object.entries(stats.categories).map(([k,v]) => `<tr><td class="text-gray-500">${k}</td><td class="text-right">${v} 件</td></tr>`).join('')}</table>
+                        
+                        <h3 class="text-xs font-medium text-gray-400 border-l-2 border-[#A89F91] pl-2 mt-4">季節分佈</h3>
+                        <table class="stats-table">${Object.entries(stats.seasons).map(([k,v]) => `<tr><td class="text-gray-500">${k}季</td><td class="text-right">${v} 件</td></tr>`).join('')}</table>
+
+                        <h3 class="text-xs font-medium text-gray-400 border-l-2 border-[#A89F91] pl-2 mt-4">最常購買來源</h3>
+                        <p class="text-sm text-gray-600 pl-2">${topSource[0]} (${topSource[1]} 件)</p>
+                    </div>
+                `;
                 document.getElementById('statsModal').classList.remove('hidden');
             };
         }
 
         function closeStatsModal() { document.getElementById('statsModal').classList.add('hidden'); }
 
-        function renderStatsUI(stats) {
-            const container = document.getElementById('statsContent');
-            
-            let catRows = Object.entries(stats.categories)
-                .map(([name, count]) => `<tr><td>${name}</td><td class="text-right font-medium">${count} 件</td></tr>`)
-                .join('');
-
-            let seasonRows = Object.entries(stats.seasons)
-                .map(([name, count]) => `<tr><td>${name}季單品</td><td class="text-right font-medium">${count} 件</td></tr>`)
-                .join('');
-
-            container.innerHTML = `
-                <div class="text-center bg-[#FAF9F6] py-6 rounded-2xl">
-                    <p class="text-[11px] text-gray-400 uppercase tracking-widest mb-1">Total Items</p>
-                    <p class="text-4xl font-light text-[#A89F91]">${stats.total}</p>
-                </div>
-
-                <div>
-                    <h3 class="text-xs font-medium text-gray-400 mb-3 border-l-2 border-[#A89F91] pl-2">類別分佈</h3>
-                    <table class="stats-table">${catRows}</table>
-                </div>
-
-                <div>
-                    <h3 class="text-xs font-medium text-gray-400 mb-3 border-l-2 border-[#A89F91] pl-2">季節穿著</h3>
-                    <table class="stats-table">${seasonRows}</table>
-                    <p class="text-[9px] text-gray-300 mt-2 text-right">* 一件衣服可跨季節統計</p>
-                </div>
-            `;
-        }
-
-        // --- 原有功能 ---
-        async function openEditModal(id) {
-            const tx = db.transaction("clothes", "readonly");
-            const item = await new Promise(res => {
-                const req = tx.objectStore("clothes").get(id);
-                req.onsuccess = () => res(req.result);
-            });
-            if (!item) return;
-            editingId = id;
-            document.getElementById('modalTitle').innerText = "編輯衣物資訊";
-            currentResizedBase64 = item.img;
-            document.getElementById('imagePreview').src = item.img;
-            document.getElementById('imagePreview').classList.remove('hidden');
-            document.getElementById('uploadPlaceholder').classList.add('hidden');
-            document.getElementById('mainCat').value = item.mainCat;
-            updateSubCat();
-            document.getElementById('subCat').value = item.subCat;
-            document.querySelectorAll('input[name="season"]').forEach(cb => cb.checked = item.seasons.includes(cb.value));
-            document.getElementById('itemSize').value = item.size === '-' ? "" : item.size;
-            document.getElementById('itemSource').value = item.source === '-' ? "" : item.source;
-            document.getElementById('itemPrice').value = item.price === '-' ? "" : item.price;
-            document.getElementById('itemNotes').value = item.notes || "";
-            toggleModal(true);
-        }
-
-        function setMainFilter(cat) {
-            activeMainFilter = cat;
-            document.querySelectorAll('.filter-main').forEach(btn => btn.classList.replace('btn-active', 'btn-outline'));
-            document.querySelector(`.filter-main[data-cat="${cat}"]`).classList.replace('btn-outline', 'btn-active');
-            renderCloset();
-        }
-
-        function setSeasonFilter(season) {
-            activeSeasonFilter = season;
-            document.querySelectorAll('.filter-season').forEach(btn => {
-                btn.classList.remove('bg-[#A89F91]', 'text-white', 'border-[#A89F91]');
-                btn.classList.add('bg-white', 'text-gray-500', 'border-gray-200');
-            });
-            const activeBtn = document.querySelector(`.filter-season[data-season="${season}"]`);
-            activeBtn.classList.add('bg-[#A89F91]', 'text-white', 'border-[#A89F91]');
-            renderCloset();
-        }
-
         async function renderCloset() {
             if (!db) return;
             const grid = document.getElementById('closetGrid');
-            grid.innerHTML = '<p class="col-span-2 text-center text-gray-300 py-10">讀取中...</p>';
+            const searchTag = document.getElementById('searchInput').value.toLowerCase();
+            
             const tx = db.transaction("clothes", "readonly");
-            const allItems = await new Promise(res => {
-                tx.objectStore("clothes").getAll().onsuccess = e => res(e.target.result);
-            });
-            const filteredItems = allItems.filter(item => {
-                const mainMatch = (activeMainFilter === 'all' || item.mainCat === activeMainFilter);
-                const seasonMatch = (activeSeasonFilter === 'all' || item.seasons.includes(activeSeasonFilter));
-                return mainMatch && seasonMatch;
-            }).sort((a, b) => b.id - a.id);
-            grid.innerHTML = '';
-            if (filteredItems.length === 0) {
-                grid.innerHTML = `<p class="col-span-2 text-center text-gray-300 py-10 text-sm">尚無衣物</p>`;
-                return;
-            }
-            filteredItems.forEach(item => {
-                const notesHtml = item.notes ? `<p class="text-[9px] text-gray-300 italic mt-1 line-clamp-1">Note: ${item.notes}</p>` : '';
-                grid.innerHTML += `
-                    <div class="card relative animate-fade-in">
-                        <div class="absolute top-2 right-2 z-10 flex space-x-1">
-                            <button onclick="openEditModal(${item.id})" class="bg-white/80 w-7 h-7 rounded-full text-[10px] shadow-sm flex items-center justify-center">✎</button>
-                            <button onclick="deleteItem(${item.id})" class="bg-white/80 w-7 h-7 rounded-full text-[10px] shadow-sm flex items-center justify-center">✕</button>
-                        </div>
-                        <div class="image-container"><img src="${item.img}" loading="lazy"></div>
-                        <div class="p-3">
-                            <p class="text-[10px] text-gray-400 mb-1">${item.mainCat} · ${item.subCat}</p>
-                            <div class="flex flex-wrap gap-1 mb-2">${item.seasons.map(s => `<span class="tag">${s}</span>`).join('')}</div>
-                            <div class="text-[9px] text-gray-400 border-t pt-2 mt-1">
-                                <p>來源：${item.source}</p>${notesHtml}<p class="text-[8px] text-gray-200 mt-1">${item.date}</p>
+            tx.objectStore("clothes").getAll().onsuccess = e => {
+                const allItems = e.target.result;
+                const filteredItems = allItems.filter(item => {
+                    const mainMatch = (activeMainFilter === 'all' || item.mainCat === activeMainFilter);
+                    const seasonMatch = (activeSeasonFilter === 'all' || item.seasons.includes(activeSeasonFilter));
+                    const searchMatch = !searchTag || 
+                        item.subCat.toLowerCase().includes(searchTag) || 
+                        item.source.toLowerCase().includes(searchTag) || 
+                        item.notes.toLowerCase().includes(searchTag) ||
+                        item.size.toLowerCase().includes(searchTag);
+                    return mainMatch && seasonMatch && searchMatch;
+                }).sort((a, b) => b.id - a.id);
+
+                grid.innerHTML = '';
+                if (filteredItems.length === 0) {
+                    grid.innerHTML = `<p class="col-span-2 text-center text-gray-300 py-10 text-sm">找不到衣物</p>`;
+                    return;
+                }
+                filteredItems.forEach(item => {
+                    grid.innerHTML += `
+                        <div class="card relative animate-fade-in">
+                            <div class="absolute top-2 right-2 z-10 flex space-x-1">
+                                <button onclick="openEditModal(${item.id})" class="bg-white/80 w-7 h-7 rounded-full text-[10px] shadow-sm flex items-center justify-center">✎</button>
+                                <button onclick="deleteItem(${item.id})" class="bg-white/80 w-7 h-7 rounded-full text-[10px] shadow-sm flex items-center justify-center">✕</button>
                             </div>
-                        </div>
-                    </div>`;
-            });
+                            <div class="image-container"><img src="${item.img}" loading="lazy"></div>
+                            <div class="p-3">
+                                <p class="text-[10px] text-gray-400 mb-1">${item.mainCat} · ${item.subCat}</p>
+                                <div class="flex flex-wrap gap-1 mb-2">${item.seasons.map(s => `<span class="tag">${s}</span>`).join('')}</div>
+                                <div class="text-[9px] text-gray-400 border-t pt-2 mt-1">
+                                    <p class="truncate">來源：${item.source}</p>
+                                    <p class="text-[9px] text-gray-300 italic mt-1 line-clamp-1">${item.notes || ''}</p>
+                                    <p class="text-[8px] text-gray-200 mt-1">${item.date}</p>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            };
         }
 
         function handleImage(input) {
@@ -313,37 +260,76 @@
             sub.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
         }
 
+        async function openEditModal(id) {
+            db.transaction("clothes").objectStore("clothes").get(id).onsuccess = e => {
+                const item = e.target.result;
+                editingId = id;
+                document.getElementById('modalTitle').innerText = "編輯衣物";
+                currentResizedBase64 = item.img;
+                document.getElementById('imagePreview').src = item.img;
+                document.getElementById('imagePreview').classList.remove('hidden');
+                document.getElementById('uploadPlaceholder').classList.add('hidden');
+                document.getElementById('mainCat').value = item.mainCat;
+                updateSubCat();
+                document.getElementById('subCat').value = item.subCat;
+                document.querySelectorAll('input[name="season"]').forEach(cb => cb.checked = item.seasons.includes(cb.value));
+                document.getElementById('itemSize').value = item.size;
+                document.getElementById('itemSource').value = item.source;
+                document.getElementById('itemPrice').value = item.price;
+                document.getElementById('itemNotes').value = item.notes;
+                toggleModal(true);
+            };
+        }
+
         async function saveToCloset() {
             if (!currentResizedBase64) return alert('請先拍照');
-            const seasons = Array.from(document.querySelectorAll('input[name="season"]:checked')).map(el => el.value);
             const itemData = {
                 id: editingId || Date.now(),
                 img: currentResizedBase64,
                 mainCat: document.getElementById('mainCat').value,
                 subCat: document.getElementById('subCat').value,
-                seasons: seasons,
+                seasons: Array.from(document.querySelectorAll('input[name="season"]:checked')).map(el => el.value),
                 size: document.getElementById('itemSize').value || '-',
                 source: document.getElementById('itemSource').value || '-',
                 price: document.getElementById('itemPrice').value || '-',
                 notes: document.getElementById('itemNotes').value || '',
-                date: editingId ? (await getSingleItem(editingId)).date : new Date().toLocaleDateString()
+                date: editingId ? (await getSingleDate(editingId)) : new Date().toLocaleDateString()
             };
             const tx = db.transaction("clothes", "readwrite");
             tx.objectStore("clothes").put(itemData);
             tx.oncomplete = () => { renderCloset(); toggleModal(false); resetForm(); };
         }
 
-        async function getSingleItem(id) {
+        async function getSingleDate(id) {
             return new Promise(res => {
-                db.transaction("clothes").objectStore("clothes").get(id).onsuccess = e => res(e.target.result);
+                db.transaction("clothes").objectStore("clothes").get(id).onsuccess = e => res(e.target.result.date);
             });
         }
 
         function deleteItem(id) {
-            if (!confirm('確定刪除？')) return;
-            const tx = db.transaction("clothes", "readwrite");
-            tx.objectStore("clothes").delete(id);
-            tx.oncomplete = () => renderCloset();
+            if (confirm('確定刪除？')) {
+                const tx = db.transaction("clothes", "readwrite");
+                tx.objectStore("clothes").delete(id);
+                tx.oncomplete = () => renderCloset();
+            }
+        }
+
+        function setMainFilter(cat) {
+            activeMainFilter = cat;
+            document.querySelectorAll('.filter-main').forEach(btn => btn.classList.replace('btn-active', 'btn-outline'));
+            document.querySelector(`.filter-main[data-cat="${cat}"]`).classList.replace('btn-outline', 'btn-active');
+            renderCloset();
+        }
+
+        function setSeasonFilter(season) {
+            activeSeasonFilter = season;
+            document.querySelectorAll('.filter-season').forEach(btn => {
+                btn.classList.remove('bg-[#A89F91]', 'text-white', 'border-[#A89F91]');
+                btn.classList.add('bg-white', 'text-gray-500', 'border-gray-200');
+            });
+            const activeBtn = document.querySelector(`.filter-season[data-season="${season}"]`);
+            activeBtn.classList.add('bg-[#A89F91]', 'text-white', 'border-[#A89F91]');
+            renderCloset();
         }
 
         function resetForm() {
@@ -354,9 +340,8 @@
             document.getElementById('itemPrice').value = ""; document.getElementById('itemNotes').value = "";
         }
 
-        async function exportBackup() {
-            const tx = db.transaction("clothes", "readonly");
-            tx.objectStore("clothes").getAll().onsuccess = e => {
+        function exportBackup() {
+            db.transaction("clothes").objectStore("clothes").getAll().onsuccess = e => {
                 const blob = new Blob([JSON.stringify(e.target.result)], {type: "application/json"});
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
@@ -367,11 +352,10 @@
 
         function importBackup(input) {
             const reader = new FileReader();
-            reader.onload = async e => {
+            reader.onload = e => {
                 const items = JSON.parse(e.target.result);
                 const tx = db.transaction("clothes", "readwrite");
-                const store = tx.objectStore("clothes");
-                items.forEach(item => store.put(item));
+                items.forEach(item => tx.objectStore("clothes").put(item));
                 tx.oncomplete = () => { alert('匯入成功'); renderCloset(); };
             };
             reader.readAsText(input.files[0]);
