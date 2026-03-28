@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Rewen 的百件衣櫃精簡統計版</title>
+    <title>Rewen 的百件衣櫃管理版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
@@ -20,6 +20,7 @@
         .modern-input { padding: 10px 12px; background-color: #F9F9F9; border: 1px solid #F0F0F0; border-radius: 8px; appearance: none; outline: none; width: 100%; }
         .stats-table { width: 100%; border-collapse: collapse; font-size: 14px; }
         .stats-table td { padding: 12px 8px; border-bottom: 1px solid #F3F3F3; }
+        .rank-number { font-size: 10px; font-weight: bold; color: #A89F91; margin-right: 8px; border: 1px solid #A89F91; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; items-center; justify-content: center; }
     </style>
 </head>
 <body class="pb-24">
@@ -68,7 +69,7 @@
     <!-- 新增按鈕 -->
     <button onclick="openAddModal()" class="fixed bottom-8 right-6 w-14 h-14 btn-primary rounded-full shadow-lg flex items-center justify-center text-3xl font-light">+</button>
 
-    <!-- 統計報告彈窗 (已移除金額相關內容) -->
+    <!-- 統計報告彈窗 -->
     <div id="statsModal" class="fixed inset-0 bg-black/40 hidden z-50 flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="bg-white w-full max-w-sm rounded-3xl p-6 max-h-[85vh] overflow-y-auto shadow-2xl relative">
             <button onclick="closeStatsModal()" class="absolute top-5 right-5 text-gray-400 text-2xl">&times;</button>
@@ -133,7 +134,7 @@
         function toggleModal(show) { document.getElementById('uploadModal').classList.toggle('hidden', !show); }
         function openAddModal() { editingId = null; resetForm(); document.getElementById('modalTitle').innerText = "新增衣物單品"; updateSubCat(); toggleModal(true); }
 
-        // --- 修正後的統計功能 (純數量) ---
+        // --- 統計功能 (列出前三名購買來源) ---
         function openStatsModal() {
             const tx = db.transaction("clothes", "readonly");
             tx.objectStore("clothes").getAll().onsuccess = e => {
@@ -148,14 +149,27 @@
                 clothes.forEach(item => {
                     if (stats.categories[item.mainCat] !== undefined) stats.categories[item.mainCat]++;
                     item.seasons.forEach(s => { if (stats.seasons[s] !== undefined) stats.seasons[s]++; });
-                    if (item.source && item.source !== '-') {
-                        stats.sources[item.source] = (stats.sources[item.source] || 0) + 1;
+                    if (item.source && item.source !== '-' && item.source.trim() !== '') {
+                        const src = item.source.trim();
+                        stats.sources[src] = (stats.sources[src] || 0) + 1;
                     }
                 });
 
-                const topSource = Object.entries(stats.sources).sort((a,b) => b[1] - a[1])[0] || ["無", 0];
+                // 排序來源並取前三名
+                const sortedSources = Object.entries(stats.sources)
+                    .sort((a,b) => b[1] - a[1])
+                    .slice(0, 3);
 
                 const container = document.getElementById('statsContent');
+                
+                let sourceRows = sortedSources.length > 0 
+                    ? sortedSources.map(([name, count], index) => `
+                        <tr>
+                            <td class="text-gray-500"><span class="rank-number">${index + 1}</span>${name}</td>
+                            <td class="text-right">${count} 件</td>
+                        </tr>`).join('')
+                    : '<tr><td colspan="2" class="text-center text-gray-300 py-2">尚無來源資料</td></tr>';
+
                 container.innerHTML = `
                     <div class="bg-[#FAF9F6] p-6 rounded-2xl text-center">
                         <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">衣櫃總件數</p>
@@ -169,8 +183,8 @@
                         <h3 class="text-xs font-medium text-gray-400 border-l-2 border-[#A89F91] pl-2 mt-4">季節分佈</h3>
                         <table class="stats-table">${Object.entries(stats.seasons).map(([k,v]) => `<tr><td class="text-gray-500">${k}季</td><td class="text-right">${v} 件</td></tr>`).join('')}</table>
 
-                        <h3 class="text-xs font-medium text-gray-400 border-l-2 border-[#A89F91] pl-2 mt-4">最常購買來源</h3>
-                        <p class="text-sm text-gray-600 pl-2">${topSource[0]} (${topSource[1]} 件)</p>
+                        <h3 class="text-xs font-medium text-gray-400 border-l-2 border-[#A89F91] pl-2 mt-4">最常購買來源 Top 3</h3>
+                        <table class="stats-table">${sourceRows}</table>
                     </div>
                 `;
                 document.getElementById('statsModal').classList.remove('hidden');
