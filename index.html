@@ -16,6 +16,7 @@
         .image-container img { width: 100%; height: 100%; object-fit: cover; }
         .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); overflow: hidden; }
         .tag { background-color: #F0EEE9; color: #7D7468; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
+        .size-badge { background-color: #F8F7F4; color: #A89F91; font-size: 9px; padding: 1px 5px; border-radius: 4px; border: 1px solid #E5E7EB; margin-right: 4px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .modern-input { padding: 10px 12px; background-color: #F9F9F9; border: 1px solid #F0F0F0; border-radius: 8px; appearance: none; outline: none; width: 100%; }
         .stats-table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -134,7 +135,6 @@
         function toggleModal(show) { document.getElementById('uploadModal').classList.toggle('hidden', !show); }
         function openAddModal() { editingId = null; resetForm(); document.getElementById('modalTitle').innerText = "新增衣物單品"; updateSubCat(); toggleModal(true); }
 
-        // --- 統計功能 (列出前三名購買來源) ---
         function openStatsModal() {
             const tx = db.transaction("clothes", "readonly");
             tx.objectStore("clothes").getAll().onsuccess = e => {
@@ -145,7 +145,6 @@
                     seasons: { "春": 0, "夏": 0, "秋": 0, "冬": 0 },
                     sources: {}
                 };
-
                 clothes.forEach(item => {
                     if (stats.categories[item.mainCat] !== undefined) stats.categories[item.mainCat]++;
                     item.seasons.forEach(s => { if (stats.seasons[s] !== undefined) stats.seasons[s]++; });
@@ -154,35 +153,21 @@
                         stats.sources[src] = (stats.sources[src] || 0) + 1;
                     }
                 });
-
-                // 排序來源並取前三名
-                const sortedSources = Object.entries(stats.sources)
-                    .sort((a,b) => b[1] - a[1])
-                    .slice(0, 3);
-
+                const sortedSources = Object.entries(stats.sources).sort((a,b) => b[1] - a[1]).slice(0, 3);
                 const container = document.getElementById('statsContent');
-                
                 let sourceRows = sortedSources.length > 0 
-                    ? sortedSources.map(([name, count], index) => `
-                        <tr>
-                            <td class="text-gray-500"><span class="rank-number">${index + 1}</span>${name}</td>
-                            <td class="text-right">${count} 件</td>
-                        </tr>`).join('')
+                    ? sortedSources.map(([name, count], index) => `<tr><td class="text-gray-500"><span class="rank-number">${index + 1}</span>${name}</td><td class="text-right">${count} 件</td></tr>`).join('')
                     : '<tr><td colspan="2" class="text-center text-gray-300 py-2">尚無來源資料</td></tr>';
-
                 container.innerHTML = `
                     <div class="bg-[#FAF9F6] p-6 rounded-2xl text-center">
                         <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">衣櫃總件數</p>
                         <p class="text-4xl font-light text-[#A89F91]">${stats.total}</p>
                     </div>
-                    
                     <div class="space-y-4 pt-2">
                         <h3 class="text-xs font-medium text-gray-400 border-l-2 border-[#A89F91] pl-2">各類別佔比</h3>
                         <table class="stats-table">${Object.entries(stats.categories).map(([k,v]) => `<tr><td class="text-gray-500">${k}</td><td class="text-right">${v} 件</td></tr>`).join('')}</table>
-                        
                         <h3 class="text-xs font-medium text-gray-400 border-l-2 border-[#A89F91] pl-2 mt-4">季節分佈</h3>
                         <table class="stats-table">${Object.entries(stats.seasons).map(([k,v]) => `<tr><td class="text-gray-500">${k}季</td><td class="text-right">${v} 件</td></tr>`).join('')}</table>
-
                         <h3 class="text-xs font-medium text-gray-400 border-l-2 border-[#A89F91] pl-2 mt-4">最常購買來源 Top 3</h3>
                         <table class="stats-table">${sourceRows}</table>
                     </div>
@@ -197,7 +182,6 @@
             if (!db) return;
             const grid = document.getElementById('closetGrid');
             const searchTag = document.getElementById('searchInput').value.toLowerCase();
-            
             const tx = db.transaction("clothes", "readonly");
             tx.objectStore("clothes").getAll().onsuccess = e => {
                 const allItems = e.target.result;
@@ -229,7 +213,7 @@
                                 <p class="text-[10px] text-gray-400 mb-1">${item.mainCat} · ${item.subCat}</p>
                                 <div class="flex flex-wrap gap-1 mb-2">${item.seasons.map(s => `<span class="tag">${s}</span>`).join('')}</div>
                                 <div class="text-[9px] text-gray-400 border-t pt-2 mt-1">
-                                    <p class="truncate">來源：${item.source}</p>
+                                    <p class="truncate"><span class="size-badge">${item.size}</span>來源：${item.source}</p>
                                     <p class="text-[9px] text-gray-300 italic mt-1 line-clamp-1">${item.notes || ''}</p>
                                     <p class="text-[8px] text-gray-200 mt-1">${item.date}</p>
                                 </div>
